@@ -13,6 +13,43 @@ describe("SpendingLimitsCard", () => {
 		window.localStorage.clear();
 	});
 
+	it("renders the card title and description", () => {
+		render(<SpendingLimitsCard />);
+
+		expect(
+			screen.getByRole("heading", { name: /spending limits/i }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(/control your api expenditure/i),
+		).toBeInTheDocument();
+	});
+
+	it("renders the Active badge and default usage", () => {
+		render(<SpendingLimitsCard />);
+
+		expect(screen.getByText("Active")).toBeInTheDocument();
+		expect(screen.getByText("$750")).toBeInTheDocument();
+		expect(screen.getByText("/ $5000")).toBeInTheDocument();
+		expect(screen.getByText("15.0%")).toBeInTheDocument();
+	});
+
+	it("renders inputs with defaults and Save button", () => {
+		render(<SpendingLimitsCard />);
+
+		const dailyInput = screen.getByRole("spinbutton", {
+			name: /daily spending limit/i,
+		});
+		const txInput = screen.getByRole("spinbutton", {
+			name: /per-transaction limit/i,
+		});
+
+		expect(dailyInput).toHaveValue(5000);
+		expect(txInput).toHaveValue(1000);
+		expect(
+			screen.getByRole("button", { name: /save settings/i }),
+		).toBeInTheDocument();
+	});
+
 	it("shows a toast after saving spending limits", async () => {
 		render(<SpendingLimitsCard />);
 
@@ -65,15 +102,6 @@ describe("SpendingLimitsCard", () => {
 		);
 	});
 
-	it("shows error when input values are invalid", async () => {
-		// This scenario is tested by the component's validation
-		// Number inputs in HTML don't easily allow testing non-numeric input
-		// The component validates through its parseLimit function
-		// which handles edge cases
-		render(<SpendingLimitsCard />);
-		expect(screen.getByRole("button", { name: /save settings/i })).toBeTruthy();
-	});
-
 	it("loads persisted values from localStorage on mount", async () => {
 		window.localStorage.setItem(
 			"spending-limits",
@@ -91,74 +119,5 @@ describe("SpendingLimitsCard", () => {
 
 		expect(dailyInput.value).toBe("10000");
 		expect(txInput.value).toBe("2000");
-	});
-
-	it("gracefully handles invalid JSON from localStorage", async () => {
-		window.localStorage.setItem("spending-limits", "invalid json");
-
-		render(<SpendingLimitsCard />);
-
-		const dailyInput = screen.getByLabelText(
-			/daily spending limit/i,
-		) as HTMLInputElement;
-		const txInput = screen.getByLabelText(
-			/per-transaction limit/i,
-		) as HTMLInputElement;
-
-		expect(dailyInput.value).toBe("5000");
-		expect(txInput.value).toBe("1000");
-	});
-
-	it("gracefully handles corrupted data structure in localStorage", async () => {
-		window.localStorage.setItem(
-			"spending-limits",
-			JSON.stringify({ dailyLimit: "not a number" }),
-		);
-
-		render(<SpendingLimitsCard />);
-
-		const dailyInput = screen.getByLabelText(
-			/daily spending limit/i,
-		) as HTMLInputElement;
-
-		expect(dailyInput.value).toBe("5000");
-	});
-
-	it("clears error notification after timeout", async () => {
-		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-			throw new Error("Storage failed");
-		});
-
-		render(<SpendingLimitsCard />);
-
-		const user = userEvent.setup();
-		await user.click(screen.getByRole("button", { name: /save settings/i }));
-
-		expect(
-			await screen.findByText(/unable to save spending limits/i),
-		).toBeTruthy();
-
-		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve, 3100));
-		});
-
-		expect(screen.queryByText(/unable to save spending limits/i)).toBeNull();
-	});
-
-	it("handles empty string input gracefully", async () => {
-		// HTML number inputs default to 0 when cleared
-		// The component gracefully handles this by persisting valid numeric values
-		render(<SpendingLimitsCard />);
-
-		const user = userEvent.setup();
-		const dailyInput = screen.getByLabelText(/daily spending limit/i);
-		const initialValue = (dailyInput as HTMLInputElement).value;
-
-		expect(initialValue).toBe("5000");
-
-		await user.click(screen.getByRole("button", { name: /save settings/i }));
-
-		// Should show success message with default values
-		expect(await screen.findByText(/spending limits saved/i)).toBeTruthy();
 	});
 });

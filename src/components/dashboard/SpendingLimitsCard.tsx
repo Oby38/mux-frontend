@@ -4,13 +4,20 @@ import { AlertCircle, DollarSign, TrendingUp, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 function parseLimit(value: string) {
 	const number = Number(value);
 	return Number.isFinite(number) ? number : NaN;
 }
 
-export function SpendingLimitsCard() {
+interface SpendingLimitsCardProps {
+	loading?: boolean;
+}
+
+export function SpendingLimitsCard({
+	loading = false,
+}: SpendingLimitsCardProps) {
 	const [dailyLimit, setDailyLimit] = useState("5000");
 	const [transactionLimit, setTransactionLimit] = useState("1000");
 	const [notification, setNotification] = useState<string | null>(null);
@@ -41,19 +48,15 @@ export function SpendingLimitsCard() {
 	useEffect(() => {
 		try {
 			const stored = window.localStorage.getItem("spending-limits");
-			if (!stored) {
-				return;
-			}
+			if (!stored) return;
 
 			const parsed = JSON.parse(stored);
 			if (
 				typeof parsed?.dailyLimit === "number" &&
 				isFinite(parsed.dailyLimit)
 			) {
-				// eslint-disable-next-line react-hooks/set-state-in-effect
 				setDailyLimit(String(parsed.dailyLimit));
 			}
-
 			if (
 				typeof parsed?.transactionLimit === "number" &&
 				isFinite(parsed.transactionLimit)
@@ -61,7 +64,7 @@ export function SpendingLimitsCard() {
 				setTransactionLimit(String(parsed.transactionLimit));
 			}
 		} catch {
-			// Silently fail if storage is not available
+			// ignore
 		}
 
 		return () => {
@@ -104,6 +107,8 @@ export function SpendingLimitsCard() {
 		}
 	};
 
+	if (loading) return <SpendingLimitsCardSkeleton />;
+
 	return (
 		<div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden">
 			<div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
@@ -129,7 +134,6 @@ export function SpendingLimitsCard() {
 			</div>
 
 			<div className="p-6 space-y-8">
-				{/* Usage Statistics */}
 				<div className="space-y-3">
 					<div className="flex justify-between items-end">
 						<div>
@@ -156,7 +160,6 @@ export function SpendingLimitsCard() {
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					{/* Daily Limit Input */}
 					<div className="space-y-2">
 						<label
 							htmlFor="daily-limit"
@@ -183,7 +186,6 @@ export function SpendingLimitsCard() {
 						</p>
 					</div>
 
-					{/* Transaction Limit Input */}
 					<div className="space-y-2">
 						<label
 							htmlFor="tx-limit"
@@ -211,7 +213,6 @@ export function SpendingLimitsCard() {
 					</div>
 				</div>
 
-				{/* Note/Policy */}
 				<div className="flex gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10">
 					<AlertCircle className="size-5 text-blue-600 dark:text-blue-400 shrink-0" />
 					<p className="text-xs leading-relaxed text-blue-800 dark:text-blue-300">
@@ -242,6 +243,55 @@ export function SpendingLimitsCard() {
 				<Button className="rounded-full px-6" onClick={handleSave}>
 					Save Settings
 				</Button>
+			</div>
+		</div>
+	);
+}
+
+function SpendingLimitsCardSkeleton() {
+	return (
+		<div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden">
+			<div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<Skeleton className="h-9 w-9 rounded-lg" />
+					<div className="space-y-1.5">
+						<Skeleton className="h-5 w-36" />
+						<Skeleton className="h-4 w-56" />
+					</div>
+				</div>
+				<Skeleton className="h-5 w-14 rounded-full" />
+			</div>
+
+			<div className="p-6 space-y-8">
+				<div className="space-y-3">
+					<div className="flex justify-between items-end">
+						<div className="space-y-1">
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-7 w-28" />
+						</div>
+						<Skeleton className="h-4 w-10" />
+					</div>
+					<Skeleton className="h-2 w-full rounded-full" />
+				</div>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div className="space-y-2">
+						<Skeleton className="h-4 w-36" />
+						<Skeleton className="h-9 w-full rounded-lg" />
+						<Skeleton className="h-3 w-48" />
+					</div>
+					<div className="space-y-2">
+						<Skeleton className="h-4 w-36" />
+						<Skeleton className="h-9 w-full rounded-lg" />
+						<Skeleton className="h-3 w-44" />
+					</div>
+				</div>
+
+				<Skeleton className="h-16 w-full rounded-lg" />
+			</div>
+
+			<div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 flex justify-end">
+				<Skeleton className="h-9 w-32 rounded-full" />
 			</div>
 		</div>
 	);
